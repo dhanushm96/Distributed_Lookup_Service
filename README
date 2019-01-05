@@ -1,0 +1,133 @@
+Name : Dhanush Mutyala
+Student ID : 6465955095
+
+Project Description:
+The project consistes of 2 Backend Database servers, one computation server, one intermediate server (AWS server) that communicates with all the backend servers and receives link ID from client and simultaneously displays all the actions on the monitor and finally reverts back the end to end delay of the link enquired by the client (if link information is found on any of the databses)   
+
+Source codes in the project:
+
+
+Parts of the Project:
+
+Client :
+  The link Id, Signal power and data size is taken from the user through this code.
+  And at the end it receives back the end to end delay for the desired inputs from AWS if a match for the corresponding link ID is found
+  The messages exchanged would look like the following:
+  The client sent link ID=<linkID>, size=<datasize>, and power=<signal power> to AWS
+  If a match is found at serverA or B
+  The delay for link <linkID> is <delay>ms
+  If a match is not found at serverA or B
+  Found no matches for link <linkID>
+
+Monitor:
+ 	It displays the link Id, power and data size received from AWS sent by client.
+ 	After that if a match is found at Database A or B it will display the Transmission delay, propogation delay and total delay.
+ 	It will receive and display all the messages untill its terminated forcefully.
+ 	
+ 	The messages exchanged would look like the following:
+ 	The monitor received input=<linkid>, size=<datasize>, and power=<signalpower> from the AWS
+	If a match is found at server A or B
+	The result for link <linkid>:
+	Tt = <Tt>ms
+	Tp = <Tp>ms
+	Delay = <delay>ms
+	Tt,Tp and delay will be calculated at ServerC and sent to AWS
+	If a match is not found at server A or B
+	Found no matches for link <linkid>
+AWS server:
+	First it receives the input message from client
+	Then it transmits to monitor , server A and B.
+	Depending upon the response it decides whether to send to server C and then to client and monitor or directly to monitor and client.
+	If a match is found at Server A or B
+	It receives the corresponding inputs given by client and the ones retreived by Server A or B to Server C
+	Server C computes the delay and sends it to AWS and it is forwarded to client and monitor.
+	If a match is not found then AWS sends a response to client and monitor saying "No match".
+	It will receive and display all the messages from client untill its terminated forcefully.
+
+	The messages exchanged would look like the following:
+	The AWS is up and running
+	The AWS received link ID=<linkID>, size=<datasize>, and power=<signal power> from the client using TCP over port <>
+	The AWS sent link ID=<linkID>, size=<datasize>, and power=<signal power>to the monitor using TCP over port <>
+	The AWS sent link ID=<linkID> to Backend-Server A using UDP over port < 24095 >
+	The AWS sent link ID=<linkID> to Backend-Server B using UDP over port < 24095 >
+
+	If a match is found at either Server A or B it will receive a message like:
+	The AWS received < 1 > matches from Backend-Server < A > using UDP over port <24095 > 
+	The AWS received < 0 > matches from Backend-Server < B > using UDP over port <24095 >
+	if found at A and it will be reversed if found other way.
+
+	The AWS sent link ID=<linkID>, size=<datasize>, and power=<signal power>, and link information to	Backend-Server C using UDP over port < 24095 >
+	The AWS received outputs from Backend-Server C using UDP over port < 24095 >
+	The AWS sent delay=<delay>ms to the client using TCP over port < 24605 >
+	The AWS sent detailed results to the monitor using TCP over port <24095>
+	if not found:
+	The AWS received < 0 > matches from Backend-Server < A > using UDP over port <24095 >
+	The AWS received < 0 > matches from Backend-Server < B > using UDP over port <24095 >
+	The AWS sent No Match to the monitor and the client using TCP over ports <26095> and <25095>, respectively
+
+
+
+
+ServerA and ServerB:
+	The code used is same for both the servers. The only difference that differentiates each other is the port numbers that both servers are binded with and the database they have.
+
+	At the begining it receives the Lnk ID from AWS
+	Then a search algorithm has been written such that it compares the link ID given at client side by user is compared with the given link IDs in the database.
+	If found the corresponding values are retrived from the database and sent to AWS with the first part of the message defining that a match found.
+	If not found a message is sent with match bit of the message as 0 and rest all parts 0 giving indication to AWS that no match is found.
+
+	The messages exchanged would look like the following:
+
+	At server A:	
+	The Server A is up and running using UDP on port <21095>.
+	The Server A received input <linkID>
+	The Server A has found < 1 > matches  {If match is found}
+	The Server A has found < 0 > matches  {If match is not found}
+	The Server A finished sending the output to AWS
+
+	At serverB:
+	The Server A is up and running using UDP on port <22095>.
+	The Server A received input <linkID>
+	The Server A has found < 1 > matches  {If match is found}
+	The Server A has found < 0 > matches  {If match is not found}
+	The Server A finished sending the output to AWS
+
+
+	It will receive, search and display all the messages from the AWS untill its terminated forcefully.
+ServerC:
+	Once a match is found at either Server A or B AWS sends all the inputs given by client and the values retreived at database A or B to the serverC.
+	
+	Once it has all the inputs the following calculations are implemented:
+
+	Transmission delay: (size of data)/C
+	where C is calculated using Shannon-Hartley theorem 
+	C = B log2(1+SNR)
+	B is the bandwidth of the link obtained from the Server A or B datbase
+	SNR = signal to noise ratio(Noise is obtained from Server A or B database) and signal power is given as input from the client
+	size of the data is given by client
+
+	Propogation delay = (length of the link)/(propogation velocity)
+	where both of the values are obtained from Server A or B
+
+	End to End delay = Transmission delay + propogation delay.
+
+	And then it sends back the delays to AWS.
+
+	The messages exchanged would look like the following:
+	The Server C is up and running using UDP on port <23095>
+	The Server C received link information of link ID=<linkID>, size=<datasize>, and power=<signal power>
+	The Server C finished the calculation for link <linkID>
+	The Server C finished sending the output to AWS
+	It will receive, compute and display all the messages from AWS untill its terminated forcefully.
+
+	
+
+
+	References used:
+	Didn't copy parts of code though have used the examples as reference for debugging errors.
+	1. Socket programming reference _ BEEJ's GUIDE
+	2.https://www.youtube.com/watch?v=LtXEMwSG5-8
+	3.https://www.youtube.com/watch?v=_lQ-3S4fJ0U&list=PLPyaR5G9aNDvs6TtdpLcVO43_jvxp4emI
+	4.https://www.geeksforgeeks.org/socket-programming-cc/
+	5.https://www.geeksforgeeks.org/udp-server-client-implementation-c/
+	6.https://stackoverflow.com/questions/35568996/socket-programming-udp-client-server-in-c
