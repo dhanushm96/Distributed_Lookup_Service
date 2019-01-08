@@ -1,6 +1,5 @@
 Name : Dhanush Mutyala
 
-
 Project Description:
 The project consistes of 2 Backend Database servers, one computation server, one intermediate server (AWS server) that communicates with all the backend servers and receives link ID from client and simultaneously displays all the actions on the monitor and finally reverts back the end to end delay of the link enquired by the client (if link information is found on any of the databses)   
 
